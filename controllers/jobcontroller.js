@@ -31,11 +31,11 @@ export const getalljobcontroller = async (req, res, next) => {
 //---update jobs----
 export const updatejobcontroller = async (req, res, next) => {
 
-    const { company, position } = req.body
-    if (!company || !position) {
+    const { company, position, newposition } = req.body
+    if (!company || !position || !newposition) {
         next('provide all required parameters')
     }
-    const job = await db.query("SELECT * FROM jobs WHERE created_by=$1 ", [req.user.id]);
+    const job = await db.query("SELECT * FROM jobs WHERE created_by=$1 AND position=$2 ", [req.user.id, position]);
     if (job.rows.length === 0) {
         next('no job found with this id')
     }
@@ -45,8 +45,26 @@ export const updatejobcontroller = async (req, res, next) => {
         return;
 
     }
-    const updatejob = await db.query("UPDATE jobs SET company = $1, position = $2 WHERE created_by = $3 RETURNING *",
-        [company, position, req.user.id])
+    const updatejob = await db.query("UPDATE jobs SET company = $1, position = $2 WHERE job_id = $3 RETURNING *",
+        [company, newposition, jobresult.job_id])
     res.status(200).json({ updatejob })
+
+}
+//-------------delete job-----------------
+export const deletejobcontroller = async (req, res, next) => {
+
+    const { id } = req.params
+    const job = await db.query("SELECT * FROM jobs WHERE job_id=$1  ", [id]);
+    if (job.rows.length === 0) {
+        next('no job found with this id')
+    }
+    const jobresult = job.rows[0];
+    if (req.user.id != String(jobresult.created_by)) {
+        next('you are not authorised to perform this operation')
+        return;
+
+    }
+    const deletejob = await db.query("DELETE FROM jobs WHERE job_id=$1", [jobresult.id])
+    res.status(200).json({ message: 'job deleted succesfully' })
 
 }
