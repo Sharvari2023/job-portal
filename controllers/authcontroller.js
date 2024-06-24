@@ -27,8 +27,8 @@ export const registercontroller = async (req, res, next) => {
     if (!user_type) {
         next('please provide user_type');
     }
-    const checkResult = await db.query("SELECT * FROM users WHERE email=$1", [email]);
-    if (checkResult.rows.length > 0) {
+    const user = await db.query("SELECT * FROM users WHERE email=$1", [email]);
+    if (user.rows.length > 0) {
         next('email already exist try logging in');
     }
     bcrypt.hash(password, saltRounds, async (err, hash) => {
@@ -48,12 +48,12 @@ export const registercontroller = async (req, res, next) => {
 export const logincontroller = async (req, res) => {
     const { name, email, password, first_name, last_name, user_type } = req.body;
     try {
-        const result = await db.query("SELECT * FROM users WHERE email = $1 ", [
+        const user = await db.query("SELECT * FROM users WHERE email = $1 ", [
             email
         ]);
-        if (result.rows.length > 0) {
-            const user = result.rows[0];
-            const storedHashedPassword = user.password;
+        if (user.rows.length > 0) {
+            const result = user.rows[0];
+            const storedHashedPassword = result.password;
             bcrypt.compare(password, storedHashedPassword, (err, valid) => {
                 if (err) {
                     console.error("Error comparing passwords:", err);
@@ -61,7 +61,9 @@ export const logincontroller = async (req, res) => {
                 } else {
                     if (valid) {
 
-                        const token = jwt.sign({ email, name, user_type }, JWT_SECRET, { expiresIn: '1h' });
+                        const tokenPayload = { id: result.id, email: result.email, name: result.username, user_type: result.user_type };
+                        const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
+                        /* const token = jwt.sign({ id, email, name, user_type }, JWT_SECRET, { expiresIn: '1h' });*/
                         res.status(201).send({ message: 'User logged in successfully', success: true, token });
                     } else {
                         res.send({ message: 'could not log in try again' });

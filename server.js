@@ -12,6 +12,7 @@ import authroutes from "./routes/authroutes.js";
 import routes from "./routes/routes.js";
 import userRoutes from "./routes/userRoutes.js"
 import errorhandler from "./middlewares/errorhandler.js";
+import jobroutes from "./routes/jobroutes.js";
 
 
 dotenv.config();
@@ -30,6 +31,8 @@ app.use(morgan('dev'));
 app.use("/api/v1/test", routes);
 app.use("/api/v1/auth", authroutes);
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/job", jobroutes);
+
 //validation middleware
 app.use(errorhandler)
 
