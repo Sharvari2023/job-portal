@@ -1,4 +1,6 @@
 import db from "../config/db.js";
+import moment from "moment";
+
 export const jobcontroller = async (req, res, next) => {
     const { company, position } = req.body;
     if (!company || !position) {
@@ -67,4 +69,49 @@ export const deletejobcontroller = async (req, res, next) => {
     const deletejob = await db.query("DELETE FROM jobs WHERE job_id=$1", [jobresult.id])
     res.status(200).json({ message: 'job deleted succesfully' })
 
+}
+//-------------statastrics of jobs------------
+export const jobstatuscontroller = async (req, res, next) => {
+    const userId = req.user.id;
+
+    //fetch job statastics grouped by status
+    const statsresult = await db.query("SELECT status,COUNT(*) AS count FROM jobs WHERE created_by=$1 GROUP BY status", [userId])
+    // Transform stats into a dictionary using forEach
+    const stats = {};
+    statsresult.rows.forEach((row) => {
+        stats[row.status] = parseInt(row.count, 10);
+    });
+    //default stats
+    const defaultstats = {
+        pending: stats.pending || 0,
+        reject: stats.reject || 0,
+        interview: stats.interview || 0,
+    }
+
+    //fetch monthly application status
+    const monthlyApplicationResult = await db.query(`
+            SELECT EXTRACT(YEAR FROM created_at) AS year,
+                   EXTRACT(MONTH FROM created_at) AS month,
+                   COUNT(*) AS count
+            FROM jobs
+            WHERE created_by = $1
+            GROUP BY year, month
+            ORDER BY year DESC, month DESC
+        `, [userId])
+
+    // Transform the monthly application statistics
+    const monthlyApplication = monthlyApplicationResult.rows.map((item) => {
+        const { year, month, count } = item;
+        const date = moment()
+            .month(month - 1)
+            .year(year)
+            .format("MMM Y");
+        return { date, count: parseInt(count, 10) };
+    });
+
+    res.status(200).json({
+        totalJobs: statsresult.rowCount,
+        defaultstats,
+        monthlyApplication,
+    });
 }
