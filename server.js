@@ -5,6 +5,9 @@ import cors from "cors";
 import morgan from "morgan";
 import bcrypt from "bcrypt";
 import 'express-async-errors';
+//security import
+import helmet from "helmet";
+import xss from "xss-clean"
 //file inputs
 import db from "./config/db.js";
 //importing routes
@@ -23,6 +26,8 @@ const app = express();
 const port = 3000;
 
 //middleware
+app.use(helmet());
+app.use(xss());
 app.use(express.urlencoded());
 app.use(cors());
 app.use(morgan('dev'));

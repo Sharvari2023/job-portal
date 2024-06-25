@@ -1,6 +1,7 @@
 import db from "../config/db.js";
 import moment from "moment";
 
+// -------------insert jobs----------------
 export const jobcontroller = async (req, res, next) => {
     const { company, position } = req.body;
     if (!company || !position) {
@@ -21,15 +22,83 @@ export const jobcontroller = async (req, res, next) => {
     // Send a successful response
     res.status(201).json({ message: "Job created successfully", job: result.rows[0] });
 }
-//----get jobs----
+//----get jobs and filter and sort jobs----
 export const getalljobcontroller = async (req, res, next) => {
     const jobs = await db.query("SELECT * FROM jobs WHERE created_by=$1", [req.user.id])
-    res.status(200).json({
+    /*res.status(200).json({
         totaljobs: jobs.length,
         jobs
-    })
-}
+    })*/
+    const { status, position, search, sort, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    let query = `SELECT * FROM jobs WHERE 1=1`; // Base query that always evaluates to true
+    const queryParams = [];
+    //logic filters
+    if (status && status !== "all") {
+        query += ` AND status = $${queryParams.length + 1}`;
+        queryParams.push(status);
+    }
+    if (position && position !== "all") {
+        query += ` AND position = $${queryParams.length + 1}`;
+        queryParams.push(position);
+    }
+    if (search) {
+        query += ` AND position ILIKE $${queryParams.length + 1}`;
+        queryParams.push(`%${search}%`);
+    }
+    //adding sorting to the query
+    if (sort) {
+        switch (sort) {
+            case 'latest':
+                query += ` ORDER BY created_at DESC`;
+                break;
+            case 'oldest':
+                query += ` ORDER BY created_at ASC`;
+                break;
+            case 'a-z':
+                query += ` ORDER BY position ASC`;
+                break;
+            case 'z-a':
+                query += ` ORDER BY position DESC`;
+                break;
+            default:
+                break;
+        }
+    }
+    // Add pagination
+    query += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
 
+    const { rows: getjobs } = await db.query(query, queryParams);
+    // Count total jobs without pagination
+    let countQuery = `SELECT COUNT(*) FROM jobs WHERE 1=1`;
+    const countParams = [];
+
+    if (status && status !== "all") {
+        countQuery += ` AND status = $${countParams.length + 1}`;
+        countParams.push(status);
+    }
+    if (position && position !== "all") {
+        countQuery += ` AND position = $${countParams.length + 1}`;
+        countParams.push(position);
+    }
+    if (search) {
+        countQuery += ` AND position ILIKE $${countParams.length + 1}`;
+        countParams.push(`%${search}%`);
+    }
+
+    const { rows: countResult } = await db.query(countQuery, countParams);
+    const totalJobs = parseInt(countResult[0].count, 10);
+    const numOfPages = Math.ceil(totalJobs / limit);
+
+    // Return the response
+    res.status(200).json({
+        totalJobs: getjobs.length,
+        totalJobs,
+        getjobs,
+        numOfPages,
+    });
+}
 //---update jobs----
 export const updatejobcontroller = async (req, res, next) => {
 
