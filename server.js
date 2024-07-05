@@ -12,7 +12,7 @@ import xss from "xss-clean"
 import db from "./config/db.js";
 //importing routes
 import authroutes from "./routes/authroutes.js";
-import routes from "./routes/routes.js";
+
 import userRoutes from "./routes/userRoutes.js"
 import errorhandler from "./middlewares/errorhandler.js";
 import jobroutes from "./routes/jobroutes.js";
@@ -23,17 +23,18 @@ dotenv.config();
 
 
 const app = express();
-const port = 3000;
+const port = 8080;
 
 //middleware
 app.use(helmet());
 app.use(xss());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cors());
 app.use(morgan('dev'));
 
 //routes
-app.use("/api/v1/test", routes);
+
 app.use("/api/v1/auth", authroutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/job", jobroutes);
