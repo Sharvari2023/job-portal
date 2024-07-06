@@ -3,17 +3,17 @@ import moment from "moment";
 
 // -------------insert jobs----------------
 export const jobcontroller = async (req, res, next) => {
-    const { company, position } = req.body;
+    const { company, position, status, worktype, location, description } = req.body;
     if (!company || !position) {
         next("please provide all fields");
     }
-    const createdBy = req.user.id;
+    const createdBy = req.body.user.id;
     console.log(createdBy, 'creadted by id')
     const result = await db.query(
-        `INSERT INTO jobs (company, position, created_by)
-         VALUES ($1, $2, $3)
+        `INSERT INTO jobs (company, position, created_by,status,work_type,work_location,description)
+         VALUES ($1, $2, $3,$4,$5,$6,$7)
          RETURNING *`,
-        [company, position, createdBy]
+        [company, position, createdBy, status, worktype, location, description]
     );
 
     // Log the created job's ID

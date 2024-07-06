@@ -1,9 +1,13 @@
 import express from 'express';
 import userAuth from '../middlewares/authmiddleware.js';
-import { updateusercontroller } from '../controllers/usercontroller.js';
+import { getUserDataController, updateusercontroller } from '../controllers/usercontroller.js';
 
 //router object
 const router = express.Router()
+
+//get user data||post
+router.post('/getUser', userAuth, getUserDataController);
+
 
 //routes
 //get
