@@ -11,7 +11,7 @@ const userAuth = async (req, res, next) => {
         req.body.user = { id: payload.id }
         next()
     } catch (error) {
-        next('auth failed')
+        next('auth failedd')
     }
 }
 export default userAuth;

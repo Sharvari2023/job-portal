@@ -6,12 +6,13 @@ import { getUserDataController, updateusercontroller } from '../controllers/user
 const router = express.Router()
 
 //get user data||post
+
+
+router.get('/getUser-data', userAuth, getUserDataController);
 router.post('/getUser', userAuth, getUserDataController);
-
-
 //routes
 //get
 //update user using put
-router.put('/update-user', userAuth, updateusercontroller);
+router.put('/update-user-data', userAuth, updateusercontroller);
 
 export default router;
